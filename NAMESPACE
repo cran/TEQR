@@ -1,0 +1,7 @@
+#functions
+export(teqrOC,teqrDG)
+export(print.teqrOC,print.teqrDG)
+
+##S3 methods
+S3method(print,teqrOC)
+S3method(print,teqrDG)
