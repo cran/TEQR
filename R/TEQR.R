@@ -1,3 +1,28 @@
+##desc is descriptive statistics function
+desc<-function (y, pcts = c(0.025, 0.05, 0.95, 0.975), nsig = 4) 
+{
+    x <- y[!is.na(y)]
+    rn <- range(x)
+    bin <- ifelse(is.na(y), 1, 0)
+    NAs <- sum(bin)
+    if (NAs == 0) {
+        tmp <- as.numeric(signif(cbind(N = length(x), mean = mean(x), 
+            med = median(x), s = sqrt(var(x)), t(quantile(x, 
+                pcts)), min = rn[1], max = rn[2]), nsig))
+        names(tmp) <- c("N", "Mean", "Med", "S", paste(pcts), 
+            "Min", "Max")
+    }
+    else {
+        tmp <- as.numeric(signif(cbind(N = length(x), NAs = NAs, 
+            mean = mean(x), med = median(x), s = sqrt(var(x)), 
+            t(quantile(x, pcts)), min = rn[1], max = rn[2]), 
+            nsig))
+        names(tmp) <- c("N", "NA", "Mean", "Med", "S", paste(pcts), 
+            "Min", "Max")
+    }
+    tmp
+}
+
 ## pava is the pool adjacent violator algorithm to perform isotonic transformation
 pava <- function (x, wt = rep(1, length(x))) 
 {
@@ -22,10 +47,9 @@ pava <- function (x, wt = rep(1, length(x)))
   x
 }
 
-
-# Simulation of clinical trial results
-teqrOC<-function(sim,firstdose=2,probt,cohortSize=3,MaxNoCohorts=30,MTDss=12,pTarget,eq1,eq2,tootoxic){
-results.old<-c(NA,NA,NA,NA,NA,NA)
+# Simulation of clinical trial results based on toxicity
+teqrOCtox<-function(sim,firstdose=2,probt,cohortSize=3,MaxNoCohorts=30,MTDss=12,pTarget,eq1,eq2,tootoxic){
+results.old <- rep(NA,6)
 for (j in 1:sim){
 #print(j)
 tox.old<-0
@@ -69,7 +93,8 @@ if (cumtox>=tootoxic)  stopdose<-newdose-1
 if (cumtox<upperlimit)   doselevel<-newdose 
 }
 newdose<-doselevel
-if (cohortSize*length(currentlevel$tox)>=MTDss & cumtox<tootoxic) break}
+if (cohortSize*length(currentlevel$tox)>=MTDss & cumtox<tootoxic) break
+}
 cumtox.m1<-cumtox.old[-c(1)]
 simNo<-rep(j, length(output$tox))
 results<-cbind(simNo,output, cumtox.m1)
@@ -78,9 +103,89 @@ results.old<-rbind(results.old, results)
 simresults<-data.frame(results.old[-c(1),])
 simData<-(list(simresults=simresults, cohortSize=cohortSize,probt=probt, MTDss=MTDss, pTarget=pTarget, lowerlimit=lowerlimit,upperlimit=upperlimit,tootoxic=tootoxic, sim=sim))
 DLdata<-teqr.DLdata(simData=simData)
-MTDdata<-teqr.MTDdata(simData=simData, DLdata=DLdata)
-OperChar<-teqr.OperChar(simData=simData, DLdata=DLdata,MTDdata=MTDdata)
-OperChar
+MTDdata<-teqr.MTDdatatox(simData=simData, DLdata=DLdata)
+OperChartox<-teqr.OperChartox(simData=simData, DLdata=DLdata,MTDdata=MTDdata)
+OperChartox
+}
+
+
+# Simulation of clinical trial results based on activity constrained by toxicity
+teqrOCact<-function(sim, firstdose=2, proba,probc=probc, cohortSize=3, MaxNoCohorts=30, RP2Dss=RP2Dss, pTarget, eq1, eq2, tootoxic=1.01, toxcon,llactivity){
+MTDss<-RP2Dss
+results.old<-rep(NA,6)
+for (j in 1:sim){
+#print(j)
+tox.old<-0
+toxC.old<-0
+cumtox.old<-0
+cumtoxC.old<-0
+newdose<-firstdose
+stopdose<-length(proba)
+#print(newdose)
+doselevel.old<-0
+for (i in 1:MaxNoCohorts){
+tox=rbinom(1,cohortSize, prob=proba[newdose])
+toxC=rbinom(1,cohortSize, prob=probc[newdose])
+tox.old<-rbind(tox.old,tox)
+toxC.old<-rbind(toxC.old,toxC)
+doselevel.old<-rbind(doselevel.old,newdose)
+output<-data.frame(cbind(doselevel.old,tox.old,toxC.old), row.names=NULL)
+colnames(output)<-c('doselevel','tox','toxC')
+output<-output[c(-1),]
+#print(paste('i=', i))
+#print(output)
+currentlevel<-output[output$doselevel==newdose,]
+cumtox<-sum(currentlevel$tox)/(cohortSize*length(currentlevel$tox))
+cumtox.old<-rbind(cumtox.old,cumtox)
+cumtoxC<-sum(currentlevel$toxC)/(cohortSize*length(currentlevel$toxC))
+cumtoxC.old<-rbind(cumtoxC.old,cumtoxC)
+#print(paste('newdose', newdose))
+#print(paste('cumtox',cumtox))
+#print(paste('cumtoxC',cumtoxC))
+upperlimit<-pTarget+eq2
+lowerlimit<-pTarget-eq1
+stopdosem1<-stopdose-1
+#print(paste('stopdosem1', stopdosem1))
+if (newdose<stopdose & newdose>1 & cumtoxC>toxcon){
+    doselevel<-newdose-1
+    stopdose<-newdose-1
+}
+if (newdose<stopdose & newdose>1 & cumtoxC<toxcon){
+if (cumtox>lowerlimit) doselevel<-newdose
+if (cumtox>upperlimit) doselevel<-newdose-1
+if (cumtox>=tootoxic)  stopdose<-newdose-1
+if (cumtox<lowerlimit)  doselevel<-newdose+1 
+}
+if (newdose==1 & cumtoxC>toxcon) break
+if (newdose==1 & cumtoxC<toxcon){
+if (cumtox>upperlimit) break
+if (cumtox<=upperlimit)  doselevel<-newdose 
+if (cumtox<lowerlimit)  doselevel<-newdose+1 
+}
+if (newdose==stopdose & cumtoxC>toxcon) 
+   {doselevel<-newdose-1
+    stopdose<-newdose-1
+}
+if (newdose==stopdose & cumtoxC<toxcon){
+if (cumtox>upperlimit & newdose>1) doselevel<-newdose-1
+if (cumtox>=tootoxic)  stopdose<-newdose-1
+if (cumtox<upperlimit)   doselevel<-newdose 
+}
+newdose<-doselevel
+if (cohortSize*length(currentlevel$tox)>=MTDss & cumtoxC<toxcon) break
+}
+cumtox.m1<-cumtox.old[-c(1)]
+cumtoxC.m1<-cumtoxC.old[-c(1)]
+simNo<-rep(j, length(output$tox))
+results<-cbind(simNo,output, cumtox.m1, cumtoxC.m1)
+results.old<-rbind(results.old, results)
+}
+simresults<-data.frame(results.old[-c(1),])
+simData<-(list(simresults=simresults, cohortSize=cohortSize,proba=proba,probc=probc, MTDss=MTDss,pTarget=pTarget,lowerlimit=lowerlimit,upperlimit=upperlimit,tootoxic=tootoxic, toxcon=toxcon, llactivity=llactivity, sim=sim))
+DLdata<-teqr.DLdataconACT(simData=simData)
+MTDdata<-teqr.MTDdataconACT(simData=simData, DLdata=DLdata)
+OperCharact<-teqr.OperCharact(simData=simData, DLdata=DLdata,MTDdata=MTDdata)
+OperCharact
 }
 
 #orders the clinical trial simulation results by doselevel
@@ -113,8 +218,41 @@ names(results)<-c('simNo','doselevel','stox','dllength','toxl','toxu','toxest')
 return(results=results)
 }
 
+#orders the clinical trial simulation results by doselevel
+teqr.DLdataconACT<-function(simData=simData){
+sim<-simData$sim
+SDR<-simData$simresults
+re.old<-rep(NA,8)
+for (i in 1:sim){
+#print(i)
+output<-SDR[SDR$simNo==i, ]
+mindose<-min(output$doselevel)
+maxdose<-max(output$doselevel)
+for (j in mindose:maxdose){
+outputd<-output[output$doselevel==j, ]
+simNo<-outputd$simNo
+doselevel<-outputd$doselevel
+stox<-sum(outputd$tox)
+stoxC<-sum(outputd$toxC)
+dllength<-simData$cohortSize*length(outputd$tox)
+if (dllength==0) next
+toxl<-binom.test(stox,dllength)$conf[1]
+toxu<-binom.test(stox,dllength)$conf[2]
+toxest<-binom.test(stox,dllength)$estimate
+toxCest<-binom.test(stoxC,dllength)$estimate
+re1<-cbind(simNo,doselevel,stox,dllength,toxl,toxu,toxest,toxCest)
+re<-re1[1,]
+re.old<-rbind(re.old,re)
+}
+}
+results<-data.frame(re.old[-c(1),], row.names=NULL)
+names(results)<-c('simNo','doselevel','stox','dllength','toxl','toxu','toxest', 'toxCest')
+return(results=results)
+}
+
+
 #MTDdataset
-teqr.MTDdata<-function(simData=simData,DLdata=DLdata){
+teqr.MTDdatatox<-function(simData=simData,DLdata=DLdata){
 doselevel=rep(NA,simData$sim)
 for (i in 1:simData$sim){
 output<-DLdata[DLdata$simNo==i, ]
@@ -143,12 +281,52 @@ Remax.o<-Remax[o,]
 return(Remax.o=Remax.o)
 }
 
-teqr.OperChar<-function(simData=simData,DLdata=DLdata,MTDdata=MTDdata){
+
+#MTDdataset
+teqr.MTDdataconACT<-function(simData=simData,DLdata=DLdata){
+doselevel=rep(NA,simData$sim)
+for (i in 1:simData$sim){
+output<-DLdata[DLdata$simNo==i, ]
+output$tt<- ifelse(output$toxC<simData$toxcon,1,0)
+#print(output)
+#removes simulations where all results are too toxic
+if(sum(output$tt)<1)doselevel[i]<- -1
+if(sum(output$tt)>0){
+newoutput<-output[output$tt>0,]
+iv<-rep(i,length(newoutput$doselevel))
+newdat<-data.frame(cbind(c(iv),newoutput$doselevel,round(c(pava(newoutput$stox/newoutput$dllength)),2)),newoutput$toxCest)
+names(newdat)<-c('i','dl','tox','toxC')
+newdat$diff<-abs(newdat$tox-simData$pTarget)
+newdat$mindiff<-min(newdat$diff)
+mindiffdat<-newdat[newdat$diff==newdat$mindiff,]
+#print(mindiffdat)
+doselevel[i]<-max(mindiffdat$dl)
+actdat<-mindiffdat[mindiffdat$dl==doselevel[i],]
+#removes simulations were results are not active enough
+if (actdat$tox<simData$llactivity) doselevel[i]<-100
+}
+}
+simNo<-seq(1:simData$sim)
+maxpava<-data.frame(cbind(cbind(simNo),cbind(doselevel)))
+maxpava
+Remax<-merge(maxpava,DLdata)
+o<-order(Remax$simNo)
+Remax.o<-Remax[o,]
+return(Remax.o=Remax.o)
+}
+
+
+
+
+
+
+teqr.OperChartox<-function(simData=simData,DLdata=DLdata,MTDdata=MTDdata){
 totalN<-rep(NA,simData$sim)
 for (i in 1:simData$sim){ 
 totalN[i]<-sum(DLdata$dllength[DLdata$simNo==i])
 }
-MedN<-median(totalN)out<-table(simData$simresults$sim, simData$simresults$doselevel)
+MedN<-median(totalN)
+out<-table(simData$simresults$sim, simData$simresults$doselevel)
 NoPatients<-(simData$cohortSize*margin.table(out,2))/simData$sim
 sstox<-rep(NA,simData$sim)
 for (i in 1:simData$sim) sstox[i]<-sum(DLdata$stox[DLdata$simNo==i])
@@ -162,14 +340,51 @@ MeanCIlength<-mean(MTDdata$toxu-MTDdata$toxl)
 #percent of simulation achieving a defined samplesize
 stopNo.m1=simData$MTDss-1
 stopNo<-ifelse(MTDdata$dllength>stopNo.m1,1,0)
-PropObd<-prop.table(table(stopNo))[2]
+PropObd<-sum(stopNo)/simData$sim
 NoMTD<-simData$sim-length(MTDdata$toxest)
 Retab<-table(MTDdata$doselevel)
 NoTrialsMTD<-prop.table(Retab)
 NoTrialsMTD1<-prop.table(cbind(t(Retab),NoMTD))
-oc<-list(sim=simData$sim,MedN=MedN,NoPatients=NoPatients,MeanDLTrate=MeanDLTrate,NoTrialsMTD=NoTrialsMTD,NoTrialsMTD1=NoTrialsMTD1,MeanToxRate=MeanToxRate,MeanCIlength=MeanCIlength,PropObd=PropObd, NoMTD=NoMTD,simData=simData, DLdata=DLdata, MTDdata=MTDdata)class(oc) <- "teqrOC"
-    oc
+names(simData$simresults)<-c("simNo","doselevel","tox","cumtox")
+octox<-list(sim=simData$sim,MedN=MedN,NoPatients=NoPatients,MeanDLTrate=MeanDLTrate,NoTrialsMTD=NoTrialsMTD,NoTrialsMTD1=NoTrialsMTD1,MeanToxRate=MeanToxRate,MeanCIlength=MeanCIlength,PropObd=PropObd, NoMTD=NoMTD,simData=simData, DLdata=DLdata, MTDdata=MTDdata)
+class(octox) <- "teqrOCtox"
+    octox
 }
+
+teqr.OperCharact<-function(simData=simData,DLdata=DLdata,MTDdata=MTDdata){
+totalN<-rep(NA,simData$sim)
+for (i in 1:simData$sim){ 
+totalN[i]<-sum(DLdata$dllength[DLdata$simNo==i])
+}
+MedN<-median(totalN)
+out<-table(simData$simresults$sim, simData$simresults$doselevel)
+NoPatients<-(simData$cohortSize*margin.table(out,2))/simData$sim
+sstox<-rep(NA,simData$sim)
+for (i in 1:simData$sim) sstox[i]<-sum(DLdata$stox[DLdata$simNo==i])
+sdllength<-rep(NA,simData$sim)
+for (i in 1:simData$sim) sdllength[i]<-sum(DLdata$dllength[DLdata$simNo==i])
+DLTrate.dat<-data.frame(cbind(sstox,sdllength))
+DLTrate<-sstox/sdllength
+MeanDLTrate<-mean(DLTrate)
+MeanToxRate<-mean(MTDdata$toxest)
+MeanCIlength<-mean(MTDdata$toxu-MTDdata$toxl)
+MeanToxCestRate<-mean(MTDdata$toxCest)
+#percent of simulation achieving a defined samplesize
+stopNo.m1=simData$MTDss-1
+stopNo<-ifelse(MTDdata$dllength>stopNo.m1,1,0)
+PropObd<-sum(stopNo)/simData$sim
+NoRP2D<-simData$sim-length(MTDdata$toxest)
+Retab<-table(MTDdata$doselevel)
+NoTrialsMTD<-prop.table(Retab)
+NoTrialsMTD1<-prop.table(cbind(t(Retab),NoRP2D))
+names(simData$simresults)<-c("simNo","doselevel","act","toxC","cumact","cumtoxC")
+ocact<-list(sim=simData$sim,MedN=MedN,NoPatients=NoPatients,MeanDLTrate=MeanDLTrate,NoTrialsMTD=NoTrialsMTD,NoTrialsMTD1=NoTrialsMTD1,MeanToxRate=MeanToxRate,MeanCIlength=MeanCIlength,MeanToxCestRate=MeanToxCestRate, PropObd=PropObd, NoRP2D=NoRP2D,simData=simData, DLdata=DLdata, RP2Ddata=MTDdata)
+class(ocact) <- "teqrOCact"
+    ocact
+}
+
+
+
 
 #dose escalation guidelines
 teqrDG<-function(TotalN,pTarget,eq1,eq2,tootoxic){
@@ -206,51 +421,68 @@ class(dg) <- "teqrDG"
 }
 
 
-
-
-
 #print function
-print.teqrOC<-function (x,...) 
-{
-    cat("is an object of class teqrOC.   \n")
-    cat("                              \n")  
-    cat("Ave. no of Patients studied at each dose level\n")
+print.teqrOCtox<-function (x,...) 
+{   cat("is an object of class teqrOCtox.   \n")
+    cat("Ave. no of Patients studied at each dose level \n")
     print(round(x$NoPatients,2)) 
-    cat("                              \n")  
     cat("Rate dose level is chosed as the MTD \n")
-    print(round(x$NoTrialsMTD1,2))
-    cat("                              \n") 
+    print(round(x$NoTrialsMTD1,2)) 
     cat("Median Study Sample Size:", x$MedN,"\n")
     cat("Mean Study DLT Rate:", round(x$MeanDLTrate,2),"\n")
-    cat("Mean Toxicity Rate at the MTD:", round(x$MeanToxRate,2),"\n")
+    cat("Mean DLT Rate at the MTD:", round(x$MeanToxRate,2),"\n")
     cat("Mean 95% binomial confidence interval length at the MTD:", round(x$MeanCIlength,2),"\n") 
-    cat("Proportion of trials with MTD dose level sample size at or above the desired number:", round(x$PropObd,2),"\n")
+    cat("Proportion of trials with MTD dose level sample size","\n")
+    cat("   at or above the desired number:", round(x$PropObd,2),"\n")
     cat("No of simulated trials that do not determine an MTD:", x$NoMTD,"\n")  
     cat("No of simulated trials:", x$sim,"\n")  
-    cat("The following simulation data sets are also contained within the TEQR object.\n")
-    cat("The simulation level data: simData \n")
-    cat("The dose level data: DLdata \n")
-    cat("The MTD level data: MTDdata \n")
+    cat("The following simulation data sets are also contained","\n")
+    cat("   within the TEQR object.\n")
+    cat("   The simulation level data: simData \n")
+    cat("   The dose level data: DLdata \n")
+    cat("   The MTD level data: MTDdata \n")
+    invisible(NULL)
+}
+
+#print function
+print.teqrOCact<-function (x,...) 
+{   cat("is an object of class teqrOCact.   \n")  
+    cat("Ave. no of Patients studied at each dose level \n")
+    print(round(x$NoPatients,2))   
+    cat("Rate dose level is chosed as the RP2D\n")
+    print(round(x$NoTrialsMTD1,2))
+    cat("Median Study Sample Size:", x$MedN,"\n")
+    cat("Mean Study Event Rate:", round(x$MeanDLTrate,2),"\n")
+    cat("Mean Event Rate at the RP2D:", round(x$MeanToxRate,2),"\n")
+    cat("Mean 95% binomial confidence interval length at the RP2D:", round(x$MeanCIlength,2),"\n") 
+    cat("Mean Toxicity Rate at the RP2D:", round(x$MeanToxCestRate,2),"\n")
+    cat("Proportion of trials with RP2D dose level sample size","\n")
+    cat("   at or above the desired number:", round(x$PropObd,2),"\n")
+    cat("No of simulated trials that do not determine a RP2D:", x$NoRP2D,"\n")  
+    cat("No of simulated trials:", x$sim,"\n")  
+    cat("The following simulation data sets are also contained","\n")
+    cat("   within the TEQR object.\n")
+    cat("   The simulation level data: simData \n")
+    cat("   The dose level data: DLdata \n")
+    cat("   The RP2D level data: RP2Ddata \n")
     invisible(NULL)
 }
 
 #print function
 print.teqrDG<-function (x,...) 
-{
-    cat("is an object of class teqrDG which contains the dose escalation/de-escalation\n") 
-    cat("guidelines table.Note the rows represent number of subjects that have experienced\n")
-    cat("a DLT and the columns represent the number of subjects on the current dose level.\n")
-    cat("The letter codes are the guidelines and the letters are defined as follows.\n")
-    cat("E-escalate, S-Stay, D- De-escalate, and DU- De-escalate\n") 
-    cat("and do not return to this dose. \n")  
+{   cat("is an object of class teqrDG which contains the dose escalation/de-escalation\n") 
+    cat("guidelines table. The rows represent number of subjects that have\n")
+    cat("experienced a DLT/event and the columns represent the number of subjects on\n")
+    cat("the current dose level. The letter codes are the guidelines and the letters\n")
+    cat("are defined as follows; E - escalate, S - Stay, D - De-escalate,\n")  
+    cat("and DU - De-escalate and do not return to this dose. \n")  
     print(x$DoseGuideTable) 
     cat("                              \n")      
     cat("To print the dosing escalation/de-escalation guidelines\n")
-    cat("or the underlying toxicity probabilities as objects\n") 
+    cat("or the underlying toxicity/event probabilities as objects\n") 
     cat("type x$DoseGuideTable and x$probTable, respectively.\n")
-    cat("In this example the object name is output,\n") 
-    cat("so the user types output$DoseGuideTable or output$probTable\n")  
     invisible(NULL)
 }
+
 
 
