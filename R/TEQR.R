@@ -287,7 +287,7 @@ teqr.MTDdataconACT<-function(simData=simData,DLdata=DLdata){
 doselevel=rep(NA,simData$sim)
 for (i in 1:simData$sim){
 output<-DLdata[DLdata$simNo==i, ]
-output$tt<- ifelse(output$toxC<simData$toxcon,1,0)
+output$tt<- ifelse(output$toxCest<simData$toxcon,1,0)
 #print(output)
 #removes simulations where all results are too toxic
 if(sum(output$tt)<1)doselevel[i]<- -1
@@ -315,18 +315,14 @@ Remax.o<-Remax[o,]
 return(Remax.o=Remax.o)
 }
 
-
-
-
-
-
+#Results for OperChartox
 teqr.OperChartox<-function(simData=simData,DLdata=DLdata,MTDdata=MTDdata){
 totalN<-rep(NA,simData$sim)
 for (i in 1:simData$sim){ 
 totalN[i]<-sum(DLdata$dllength[DLdata$simNo==i])
 }
 MedN<-median(totalN)
-out<-table(simData$simresults$sim, simData$simresults$doselevel)
+out<-table(simData$simresults$simNo, simData$simresults$doselevel)
 NoPatients<-(simData$cohortSize*margin.table(out,2))/simData$sim
 sstox<-rep(NA,simData$sim)
 for (i in 1:simData$sim) sstox[i]<-sum(DLdata$stox[DLdata$simNo==i])
@@ -351,13 +347,14 @@ class(octox) <- "teqrOCtox"
     octox
 }
 
+#Results from OperCharact
 teqr.OperCharact<-function(simData=simData,DLdata=DLdata,MTDdata=MTDdata){
 totalN<-rep(NA,simData$sim)
 for (i in 1:simData$sim){ 
 totalN[i]<-sum(DLdata$dllength[DLdata$simNo==i])
 }
 MedN<-median(totalN)
-out<-table(simData$simresults$sim, simData$simresults$doselevel)
+out<-table(simData$simresults$simNo, simData$simresults$doselevel)
 NoPatients<-(simData$cohortSize*margin.table(out,2))/simData$sim
 sstox<-rep(NA,simData$sim)
 for (i in 1:simData$sim) sstox[i]<-sum(DLdata$stox[DLdata$simNo==i])
