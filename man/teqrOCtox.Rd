@@ -26,8 +26,28 @@ The TEQR is better than the 3+3 when compared on: 1) the number of times the dos
 \item{tootoxic}{Toxicity probability deemed too high to allow further study at a dose level.}
 }
 \value{teqrOC outputs the trial simulation operating characteristics, the simulation data sets, and all the simulation parameters.  The simulation operating characteristics include, i) the average number of subjects studied at each dose level, ii) the rate the dose level is chosen as the MTD (including if there is no MTD identified), iii) median study sample size, iv) mean study DLT rate, v) mean DLT rate at the MTD, vi) mean 95\% confidence interval rate at the MTD, vii) proportion of the trials with sample size at or above the level desired at the MTD, viii) number of simulated trials that do not determine an MTD and ix) number of simulated trials.
+
+Datasets:
+
+simData$simresults gives a line of data for each cohort.
+The columns are:
+simNo - simulation number, 
+doselevel - dose level, 
+tox - the number of subjects the experience a toxicity in the cohort, and 
+cumtox - cumulative toxicity in the cohort.
+
+DLdata gives a line of data for each dose level. The columns are:
+simNo - simulation number,
+doselevel - dose level,
+stox - number of subjects that experience a toxicity at that doselevel,
+dllength - number of subjects studied at a doselevel,
+toxl - lower limit of the 95\% confidence limits for toxicity rate,
+toxu - upperlimit of the 95\% confidence limits for toxicity rate, and
+toxest - toxicity rate estimate at that doselevel.
+
+MTDdata gives a line of data at the MTD dose selected. The columns names are the same as for DLdata.
 }
-\references{Blanchard MS and Longmate JA, (2010). Toxicity equivalence range design (TEQR): A practical Phase I design. \emph{Contemp Clin Trials} (2010), doi:10.1016/j.cct.2010.09.011}
+\references{Blanchard MS and Longmate JA, (2011). Toxicity equivalence range design (TEQR): A practical Phase I design. \emph{Contemporary Clinical Trials,(32)}, 114-121.}
 \author{M.S. Blanchard <sblanchard@coh.org>}
 \examples{
 set.seed(1111)

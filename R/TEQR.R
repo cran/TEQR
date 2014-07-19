@@ -77,20 +77,20 @@ lowerlimit<-pTarget-eq1
 stopdosem1<-stopdose-1
 #print(paste('stopdosem1', stopdosem1))
 if (newdose<stopdose & newdose>1){
-if (cumtox>lowerlimit) doselevel<-newdose
+if (cumtox>=lowerlimit) doselevel<-newdose
 if (cumtox>upperlimit) doselevel<-newdose-1
 if (cumtox>=tootoxic)  stopdose<-newdose-1
 if (cumtox<lowerlimit)  doselevel<-newdose+1 
 }
 if (newdose==1){
 if (cumtox>upperlimit) break
-if (cumtox<upperlimit)  doselevel<-newdose 
+if (cumtox<=upperlimit)  doselevel<-newdose 
 if (cumtox<lowerlimit)  doselevel<-newdose+1 
 }
 if (newdose==stopdose){
 if (cumtox>upperlimit & newdose>1) doselevel<-newdose-1
 if (cumtox>=tootoxic)  stopdose<-newdose-1
-if (cumtox<upperlimit)   doselevel<-newdose 
+if (cumtox<=upperlimit)   doselevel<-newdose 
 }
 newdose<-doselevel
 if (cohortSize*length(currentlevel$tox)>=MTDss & cumtox<tootoxic) break
@@ -146,30 +146,30 @@ upperlimit<-pTarget+eq2
 lowerlimit<-pTarget-eq1
 stopdosem1<-stopdose-1
 #print(paste('stopdosem1', stopdosem1))
-if (newdose<stopdose & newdose>1 & cumtoxC>toxcon){
+if (newdose<stopdose & newdose>1 & cumtoxC>=toxcon){
     doselevel<-newdose-1
     stopdose<-newdose-1
 }
 if (newdose<stopdose & newdose>1 & cumtoxC<toxcon){
-if (cumtox>lowerlimit) doselevel<-newdose
+if (cumtox>=lowerlimit) doselevel<-newdose
 if (cumtox>upperlimit) doselevel<-newdose-1
 if (cumtox>=tootoxic)  stopdose<-newdose-1
 if (cumtox<lowerlimit)  doselevel<-newdose+1 
 }
-if (newdose==1 & cumtoxC>toxcon) break
+if (newdose==1 & cumtoxC>=toxcon) break
 if (newdose==1 & cumtoxC<toxcon){
 if (cumtox>upperlimit) break
 if (cumtox<=upperlimit)  doselevel<-newdose 
 if (cumtox<lowerlimit)  doselevel<-newdose+1 
 }
-if (newdose==stopdose & cumtoxC>toxcon) 
+if (newdose==stopdose & cumtoxC>=toxcon) 
    {doselevel<-newdose-1
     stopdose<-newdose-1
 }
 if (newdose==stopdose & cumtoxC<toxcon){
 if (cumtox>upperlimit & newdose>1) doselevel<-newdose-1
 if (cumtox>=tootoxic)  stopdose<-newdose-1
-if (cumtox<upperlimit)   doselevel<-newdose 
+if (cumtox<=upperlimit)   doselevel<-newdose 
 }
 newdose<-doselevel
 if (cohortSize*length(currentlevel$tox)>=MTDss & cumtoxC<toxcon) break
@@ -375,6 +375,8 @@ Retab<-table(MTDdata$doselevel)
 NoTrialsMTD<-prop.table(Retab)
 NoTrialsMTD1<-prop.table(cbind(t(Retab),NoRP2D))
 names(simData$simresults)<-c("simNo","doselevel","act","toxC","cumact","cumtoxC")
+names(DLdata)<-c("simNo", "doselevel","sact", "dllength", "actl","actu", "actest","toxCest")
+names(MTDdata)<-c("simNo", "doselevel","sact", "dllength", "actl","actu", "actest","toxCest")
 ocact<-list(sim=simData$sim,MedN=MedN,NoPatients=NoPatients,MeanDLTrate=MeanDLTrate,NoTrialsMTD=NoTrialsMTD,NoTrialsMTD1=NoTrialsMTD1,MeanToxRate=MeanToxRate,MeanCIlength=MeanCIlength,MeanToxCestRate=MeanToxCestRate, PropObd=PropObd, NoRP2D=NoRP2D,simData=simData, DLdata=DLdata, RP2Ddata=MTDdata)
 class(ocact) <- "teqrOCact"
     ocact

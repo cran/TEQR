@@ -1,10 +1,10 @@
-44259d92005b648844d2b77a823b74d3 *DESCRIPTION
+7b6a7d62d7d55aa2291b2373f6199b52 *DESCRIPTION
 4eeb0d3b2c819fb161178d47b179f668 *NAMESPACE
-85017f3aaf8e610d8c52b598b2d6a03c *R/TEQR.R
+8775e19be29c4c1084d9bf9a55f96c0a *R/TEQR.R
 6a41f7f9ff37998cbfacc1067bb92b47 *man/desc.Rd
 3b016402f606001ff95e1ef6e6e98fde *man/print.teqrDG.Rd
 d79412f4cac31fddd91af3f924e0a34e *man/print.teqrOCact.Rd
 be244fb0fd08d05639cd5ca526fc2b9a *man/print.teqrOCtox.Rd
-6e1a9b8b0245e45ded02eb1219cb14e0 *man/teqrDG.Rd
-3687aff46c6c8bc3b0a31ab2e5f9d2a3 *man/teqrOCact.Rd
-ff5534cab10f71b5d7c8f9c38b0c88ee *man/teqrOCtox.Rd
+4354e82c9c64649814e0eeb268a8ae6f *man/teqrDG.Rd
+7d22143af4ca8db47fc76356caf71714 *man/teqrOCact.Rd
+75da17ba43a1fda0fb416b142d3e0422 *man/teqrOCtox.Rd

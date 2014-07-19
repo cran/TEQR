@@ -19,7 +19,7 @@ The TEQR is better than the 3+3 when compared on: 1) the number of times the dos
 \item{tootoxic}{Probability cutoff at which the toxicity probability is deemed too high to allow further study at that dose level.}
 }
 \value{TEQR outputs a table of dose escalation guidelines (DoseGuideTable) and a table of the underlying probabilities (ProbTable).}
-\references{Blanchard MS and Longmate JA, (2010). Toxicity equivalence range design (TEQR): A practical Phase I design. \emph{Contemp Clin Trials} (2010), doi:10.1016/j.cct.2010.09.011}
+\references{Blanchard MS and Longmate JA, (2011). Toxicity equivalence range design (TEQR): A practical Phase I design. \emph{Contemporary Clinical Trials,(32)}, 114-121.}
 \author{M.S. Blanchard <sblanchard@coh.org>}
 \examples{
 output<-teqrDG(TotalN=12,pTarget=.2,eq1=.05,eq2=.05,tootoxic=.34)
