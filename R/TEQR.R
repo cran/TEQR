@@ -100,7 +100,7 @@ simNo<-rep(j, length(output$tox))
 results<-cbind(simNo,output, cumtox.m1)
 results.old<-rbind(results.old, results)
 }
-simresults<-data.frame(results.old[-c(1),])
+simresults<-data.frame(results.old[-c(1),], row.names=NULL)
 simData<-(list(simresults=simresults, cohortSize=cohortSize,probt=probt, MTDss=MTDss, pTarget=pTarget, lowerlimit=lowerlimit,upperlimit=upperlimit,tootoxic=tootoxic, sim=sim))
 DLdata<-teqr.DLdata(simData=simData)
 MTDdata<-teqr.MTDdatatox(simData=simData, DLdata=DLdata)
@@ -144,8 +144,6 @@ cumtoxC.old<-rbind(cumtoxC.old,cumtoxC)
 #print(paste('cumtoxC',cumtoxC))
 upperlimit<-pTarget+eq2
 lowerlimit<-pTarget-eq1
-stopdosem1<-stopdose-1
-#print(paste('stopdosem1', stopdosem1))
 if (newdose<stopdose & newdose>1 & cumtoxC>=toxcon){
     doselevel<-newdose-1
     stopdose<-newdose-1
@@ -172,7 +170,8 @@ if (cumtox>=tootoxic)  stopdose<-newdose-1
 if (cumtox<=upperlimit)   doselevel<-newdose 
 }
 newdose<-doselevel
-if (cohortSize*length(currentlevel$tox)>=MTDss & cumtoxC<toxcon) break
+if (cohortSize*length(currentlevel$tox)>=MTDss & cumtoxC<toxcon & cumtox>=lowerlimit) break
+if (cohortSize*length(currentlevel$tox)>=MTDss & cumtox<lowerlimit & stopdose==doselevel) break
 }
 cumtox.m1<-cumtox.old[-c(1)]
 cumtoxC.m1<-cumtoxC.old[-c(1)]
@@ -180,7 +179,7 @@ simNo<-rep(j, length(output$tox))
 results<-cbind(simNo,output, cumtox.m1, cumtoxC.m1)
 results.old<-rbind(results.old, results)
 }
-simresults<-data.frame(results.old[-c(1),])
+simresults<-data.frame(results.old[-c(1),],row.names=NULL)
 simData<-(list(simresults=simresults, cohortSize=cohortSize,proba=proba,probc=probc, MTDss=MTDss,pTarget=pTarget,lowerlimit=lowerlimit,upperlimit=upperlimit,tootoxic=tootoxic, toxcon=toxcon, llactivity=llactivity, sim=sim))
 DLdata<-teqr.DLdataconACT(simData=simData)
 MTDdata<-teqr.MTDdataconACT(simData=simData, DLdata=DLdata)
@@ -222,7 +221,7 @@ return(results=results)
 teqr.DLdataconACT<-function(simData=simData){
 sim<-simData$sim
 SDR<-simData$simresults
-re.old<-rep(NA,8)
+re.old<-rep(NA,9)
 for (i in 1:sim){
 #print(i)
 output<-SDR[SDR$simNo==i, ]
@@ -240,13 +239,13 @@ toxl<-binom.test(stox,dllength)$conf[1]
 toxu<-binom.test(stox,dllength)$conf[2]
 toxest<-binom.test(stox,dllength)$estimate
 toxCest<-binom.test(stoxC,dllength)$estimate
-re1<-cbind(simNo,doselevel,stox,dllength,toxl,toxu,toxest,toxCest)
+re1<-cbind(simNo,doselevel,stox,stoxC,dllength,toxl,toxu,toxest,toxCest)
 re<-re1[1,]
 re.old<-rbind(re.old,re)
 }
 }
 results<-data.frame(re.old[-c(1),], row.names=NULL)
-names(results)<-c('simNo','doselevel','stox','dllength','toxl','toxu','toxest', 'toxCest')
+names(results)<-c('simNo','doselevel','stox','stoxC','dllength','toxl','toxu','toxest', 'toxCest')
 return(results=results)
 }
 
@@ -300,7 +299,7 @@ newdat$diff<-abs(newdat$tox-simData$pTarget)
 newdat$mindiff<-min(newdat$diff)
 mindiffdat<-newdat[newdat$diff==newdat$mindiff,]
 #print(mindiffdat)
-doselevel[i]<-max(mindiffdat$dl)
+doselevel[i]<-min(mindiffdat$dl)
 actdat<-mindiffdat[mindiffdat$dl==doselevel[i],]
 #removes simulations were results are not active enough
 if (actdat$tox<simData$llactivity) doselevel[i]<-100
@@ -375,8 +374,8 @@ Retab<-table(MTDdata$doselevel)
 NoTrialsMTD<-prop.table(Retab)
 NoTrialsMTD1<-prop.table(cbind(t(Retab),NoRP2D))
 names(simData$simresults)<-c("simNo","doselevel","act","toxC","cumact","cumtoxC")
-names(DLdata)<-c("simNo", "doselevel","sact", "dllength", "actl","actu", "actest","toxCest")
-names(MTDdata)<-c("simNo", "doselevel","sact", "dllength", "actl","actu", "actest","toxCest")
+names(DLdata)<-c("simNo", "doselevel","sact","stoxC", "dllength", "actl","actu", "actest","toxCest")
+names(MTDdata)<-c("simNo", "doselevel","sact","stoxC", "dllength", "actl","actu", "actest","toxCest")
 ocact<-list(sim=simData$sim,MedN=MedN,NoPatients=NoPatients,MeanDLTrate=MeanDLTrate,NoTrialsMTD=NoTrialsMTD,NoTrialsMTD1=NoTrialsMTD1,MeanToxRate=MeanToxRate,MeanCIlength=MeanCIlength,MeanToxCestRate=MeanToxCestRate, PropObd=PropObd, NoRP2D=NoRP2D,simData=simData, DLdata=DLdata, RP2Ddata=MTDdata)
 class(ocact) <- "teqrOCact"
     ocact

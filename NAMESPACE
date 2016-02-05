@@ -1,6 +1,7 @@
 #functions
-export(teqrOCtox,teqrOCact,teqrDG,desc)
+export(teqrOCtox,teqr.DLdata, teqr.MTDdatatox, teqrOCact,teqr.DLdataconACT, teqr.MTDdataconACT,teqrDG,desc)
 export(print.teqrOCtox, print.teqrOCact, print.teqrDG)
+importFrom("stats", "binom.test", "median", "quantile", "rbinom","var")
 
 ##S3 methods
 S3method(print,teqrOCtox)
